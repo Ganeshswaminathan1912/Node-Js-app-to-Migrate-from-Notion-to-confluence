@@ -3,7 +3,7 @@ require("dotenv").config()
 var bodyParser = require('body-parser')
 const app = express()
 const {getContent,postContent,updateNameAndPass} = require("./confluence")
-const {getData, createSuggestion,updateKeyAndId} = require("./notion")
+const {getData, createSuggestion,getTable,getTableId,listToMatrix,updateKeyAndId} = require("./notion")
 app.set("view engine", "ejs")
 app.use(bodyParser.urlencoded({extended: true}))
 var id1 = ""
@@ -24,18 +24,26 @@ app.post("/", bodyParser.urlencoded({extended:false}), (req,res,next)=>{
     title = cTitle
     updateKeyAndId(key,id)
     updateNameAndPass(cEmail,cPat,cUrl)
-    getData().then(opt =>{
-        res.render("texteditor",{data:opt});
-    })
+    getTableId().then(opt =>{
+        getTable(opt).then(data =>{
+          getData().then(data2 =>{      
+            res.render("texteditor",{title:data2[0],paragraph:data2[1],list:data2[2],table:listToMatrix(data[0],data[1])});
+          })
+        })
+        });
 })
 app.get("/te", function(req,res){
-    getData().then(opt =>{
-    res.render("texteditor",{data:opt});
-})
+    getTableId().then(opt =>{
+        getTable(opt).then(data =>{
+          getData().then(data2 =>{      
+            res.render("texteditor",{title:data2[0],paragraph:data2[1],list:data2[2],table:listToMatrix(data[0],data[1])});
+          })
+        })
+        });
 })
 app.post("/te",function(req,res){
     var txt = req.body.w3review
-    postContent(String(id1),String(title),String(txt));
+    postContent(String(id1),String(title),txt);
     res.send("Success")
 })
 app.get("/c2n", function(req,res){

@@ -1,7 +1,9 @@
 const { Client } = require('@notionhq/client');
+const { data } = require('jquery');
 
 var apKey = process.env.NOTION_API_KEY
 var blckId = process.env.NOTION_BLOCK_ID
+//var 
 
 function updateKeyAndId(apiKey,blockId){
     if (apiKey && blockId){
@@ -46,7 +48,7 @@ async function getId(){
 
     }
 }
-
+//function to get title
 async function getTitle () {
     const blockId = blckId;
     const response = await notion.blocks.retrieve({
@@ -54,23 +56,58 @@ async function getTitle () {
     });
     return response.child_page.title;
   };
+  // function to convert single dimensional array to multidimensional array
+  function listToMatrix(list, elementsPerSubArray) {
+    var matrix = [], i, k;
+
+    for (i = 0, k = -1; i < list.length; i++) {
+        if (i % elementsPerSubArray === 0) {
+            k++;
+            matrix[k] = [];
+        }
+
+        matrix[k].push(list[i]);
+    }
+    return matrix;
+}
+    //function to get table data
+    async function getTable(tableId) {
+      const blockId = tableId;
+      const response = await notion.blocks.children.list({
+        block_id: blockId,
+        page_size: 50,
+      });
+      let size = 0
+      let data = []
+      for (i=0;i<response.results.length;i++){
+        let row = response.results[i].table_row.cells.length
+        size = row
+        for(j=0;j<size;j++){
+          data.push(response.results[i].table_row.cells[j][0].plain_text);
+        }
+      }
+      return [data,size] 
+    };
   
-var data = []
+var paragraphData = []
+var listData = []
+var titleData = []
+var tableId = ""
 async function getData(){
     await getTitle().then(opt =>{
-        data.push(opt)
+        titleData.push(opt)
       })
     await getId().then(opt =>{
         for(i=0;i<opt.length;i++){
             if(opt[i].type == "paragraph"){
-                data.push(opt[i].paragraph.rich_text[0].plain_text);
+                paragraphData.push(opt[i].paragraph.rich_text[0].plain_text);
             }
             else if (opt[i].type == "numbered_list_item"){
-                data.push(String([i])+"."+opt[i].numbered_list_item.rich_text[0].plain_text);
+                listData.push(opt[i].numbered_list_item.rich_text[0].plain_text);
             }
         }
     })
-    return data
+    return [titleData,paragraphData,listData]
 }
 //posting to a page children
 async function postToBlock(title,content){
@@ -164,6 +201,7 @@ async function getTags(){
     const database = await notion.databases.retrieve({
         database_id:process.env.NOTION_DATABASE_ID
     })
+    console.log(database.properties);
     let propId = notionPropertiesById(database.properties)
     let arr = []
     for (obj in propId){
@@ -171,6 +209,31 @@ async function getTags(){
     }
     return arr
   }
+
+  async function getTableId () {
+    const blockId = process.env.NOTION_BLOCK_ID;
+    const response = await notion.blocks.children.list({
+      block_id: blockId,
+    });
+    let dataId = ""
+    for(i=0;i<response.results.length;i++){
+      if(response.results[i].type == "table"){
+        tableId = response.results[i].id
+        dataId = tableId
+      }
+     }
+     return dataId
+  };
+// getTableId().then(opt =>{
+//   getTable(opt).then(data =>{
+//     getData().then(data2 =>{      
+//       console.log(data2[0],data2[1],data2[2]);
+//       console.log(listToMatrix(data[0],data[1]))
+//     })
+//   })
+//   });
+
+// console.log(tableData);
 // getDescription().then(tags2 =>{
 //     for(i=0;i<tags2.length;i++){
 //     console.log(tags2[i]);
@@ -192,7 +255,7 @@ async function getTags(){
 //         return{id:option.id,name:option.name}
 //     })
 // }
-// async function getData() {
+// async function getData1() {
 //     const notionPages = await notion.databases.query({
 //       database_id: process.env.NOTION_DATABASE_ID,
 //     })
@@ -216,12 +279,18 @@ async function getTags(){
 //           .content,
 //     }
 //   }
+// getData().then(data =>{
+//   console.log(data);
+// })
 
 
 module.exports = {
     getData,
     createSuggestion,
     postToBlock,
+    getTableId,
+    getTable,
+    listToMatrix,
     updateKeyAndId
 }
 //getTags().then(tags1=>{
@@ -255,3 +324,4 @@ module.exports = {
 //     }
 
 // })
+

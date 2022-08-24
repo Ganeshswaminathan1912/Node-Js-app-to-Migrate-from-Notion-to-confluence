@@ -24,7 +24,21 @@
     <form action="/te" method="POST">
         <div class="container mt-5 mb-5 ">
         <textarea id="summernote" name="w3review" required>
-            <%= data%>
+
+            <%= title%>
+            <%= paragraph%>
+            <% list.forEach(function(item){ %> 
+            <li><%= item%></li>
+            <% }) %> 
+            <table class="table table-bordered">
+            <% table.forEach(function(tableItem) {%> 
+            <tr>
+              <% tableItem.forEach(function(tableItems) {%> 
+            <td><%= tableItems%></td>
+            <% } )%> 
+            </tr>
+            <% } )%> 
+            </table>
         </textarea>
        <button style="margin-top:20px ;" class="btn btn-primary" type="submit" name="button">Convert</button>
     </div>

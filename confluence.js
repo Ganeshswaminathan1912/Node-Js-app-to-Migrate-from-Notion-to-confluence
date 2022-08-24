@@ -35,7 +35,7 @@ confluence.getContentByPageTitle(spaceId, pageTitle, function(err, data) {
 function postContent(spaceId,title,content){
     confluence.postContent(spaceId,title,content,"",function(err,res){
         if (err){
-            return err;
+             return err;
         }else{
             return res;
         }
